@@ -519,7 +519,7 @@ void cTelnet::handle_socket_signal_hostFound(QHostInfo hostInfo)
 #if !defined(QT_NO_SSL)
     if (mpHost->mSslTsl) {
         postMessage(tr("[ INFO ]  - Trying secure connection to %1: %2 ...\n").arg(hostInfo.hostName(), QString::number(hostPort)));
-        socket.connectToHostEncrypted(hostInfo.hostName(), hostPort, QIODevice::ReadWrite);
+        socket.connectToHostEncrypted(hostInfo.hostName(), quint16(hostPort), QIODevice::ReadWrite);
 
     } else
 #endif
@@ -527,9 +527,9 @@ void cTelnet::handle_socket_signal_hostFound(QHostInfo hostInfo)
         mHostAddress = hostInfo.addresses().constFirst();
         postMessage(tr("[ INFO ]  - The IP address of %1 has been found. It is: %2\n").arg(hostName, mHostAddress.toString()));
         postMessage(tr("[ INFO ]  - Trying to connect to %1: %2 ...\n").arg(mHostAddress.toString(), QString::number(hostPort)));
-        socket.connectToHost(mHostAddress, hostPort);
+        socket.connectToHost(mHostAddress, quint16(hostPort));
     } else {
-        socket.connectToHost(hostInfo.hostName(), hostPort);
+        socket.connectToHost(hostInfo.hostName(), quint16(hostPort));
         postMessage(tr("[ ERROR ] - Host name lookup Failure!\n"
                        "Connection cannot be established.\n"
                        "The server name is not correct, not working properly,\n"
@@ -654,7 +654,7 @@ void cTelnet::setDisplayDimensions()
         s = TN_IAC;
         s += TN_SB;
         s += OPT_NAWS;
-        char x1, x2, y1, y2;
+        int x1, x2, y1, y2;
         x1 = x / 256;
         x2 = x % 256;
         y1 = y / 256;
@@ -966,7 +966,7 @@ void cTelnet::processTelnetCommand(const string& command)
     case TN_WONT: {
 //server refuses to enable some option...
 #ifdef DEBUG
-        qDebug() << "cTelnet::processTelnetCommand() TN_WONT command=" << (quint8)command[2];
+        qDebug() << "cTelnet::processTelnetCommand() TN_WONT command=" << quint8(command[2]);
 #endif
         option = command[2];
         const auto idxOption = static_cast<size_t>(option);
@@ -1028,7 +1028,7 @@ void cTelnet::processTelnetCommand(const string& command)
 
     case TN_DO: {
 #ifdef DEBUG
-        qDebug() << "telnet: server wants us to enable option:" << (quint8)command[2];
+        qDebug() << "telnet: server wants us to enable option:" << quint8(command[2]);
 #endif
         //server wants us to enable some option
         option = command[2];
@@ -1077,7 +1077,7 @@ void cTelnet::processTelnetCommand(const string& command)
             break;
         }
 #ifdef DEBUG
-        qDebug() << "server wants us to enable telnet option " << (quint8)option << "(TN_DO + " << (quint8)option << ")";
+        qDebug() << "server wants us to enable telnet option " << quint8(option) << "(TN_DO + " << quint8(option) << ")";
 #endif
         if (option == OPT_TIMING_MARK) {
             qDebug() << "OK we are willing to enable TIMING_MARK";
@@ -1115,7 +1115,7 @@ void cTelnet::processTelnetCommand(const string& command)
     case TN_DONT: {
 //only respond if value changed or if this option has not been announced yet
 #ifdef DEBUG
-        qDebug() << "cTelnet::processTelnetCommand() TN_DONT command=" << (quint8)command[2];
+        qDebug() << "cTelnet::processTelnetCommand() TN_DONT command=" << quint8(command[2]);
 #endif
         option = command[2];
         const auto idxOption = static_cast<size_t>(option);
@@ -1291,7 +1291,7 @@ void cTelnet::processTelnetCommand(const string& command)
                 cmd += TN_SB;
                 cmd += OPT_STATUS;
                 cmd += TNSB_IS;
-                for (size_t i = 0; i < 256; ++i) {
+                for (char i = 0; i < 256; ++i) {
                     if (myOptionState[i]) {
                         cmd += TN_WILL;
                         cmd += i;
@@ -1640,9 +1640,9 @@ void cTelnet::postMessage(QString msg)
 
         QStringList body = messageStack.first().split(QChar('\n'));
 
-        qint8 openBraceIndex = body.at(0).indexOf(QLatin1String("["));
-        qint8 closeBraceIndex = body.at(0).indexOf(QLatin1String("]"));
-        qint8 hyphenIndex = body.at(0).indexOf(QLatin1String("- "));
+        qint8 openBraceIndex = qint8(body.at(0).indexOf(QLatin1String("[")));
+        qint8 closeBraceIndex = qint8(body.at(0).indexOf(QLatin1String("]")));
+        qint8 hyphenIndex = qint8(body.at(0).indexOf(QLatin1String("- ")));
         if (openBraceIndex >= 0 && closeBraceIndex > 0 && closeBraceIndex < hyphenIndex) {
             quint8 prefixLength = hyphenIndex + 1;
             while (body.at(0).at(prefixLength) == ' ') {
@@ -1863,7 +1863,7 @@ int cTelnet::decompressBuffer(char*& in_buffer, int& length, char* out_buffer)
     mZstream.next_out = (Bytef*)out_buffer;
 
     int zval = inflate(&mZstream, Z_SYNC_FLUSH);
-    int outSize = 100000 - mZstream.avail_out;
+    uint outSize = 100000 - mZstream.avail_out;
 
     length = mZstream.avail_in;
     in_buffer = (char*)mZstream.next_in;
@@ -2146,7 +2146,7 @@ void cTelnet::handle_socket_signal_readyRead()
                                         qDebug() << "MCCP version 2 starting sequence";
                                         _compress = true;
                                     }
-                                    qDebug() << (int)buffer[i - 2] << "," << (int)buffer[i - 1] << "," << (int)buffer[i] << "," << (int)buffer[i + 1] << "," << (int)buffer[i + 2];
+                                    qDebug() << int(buffer[i - 2]) << "," << int(buffer[i - 1]) << "," << int(buffer[i]) << "," << int(buffer[i + 1]) << "," << int(buffer[i + 2]);
                                 }
                                 if (_compress) {
                                     mNeedDecompression = true;
@@ -2286,7 +2286,7 @@ void cTelnet::setKeepAlive(int socketHandle)
     alive.keepalivetime = timeout * 1000;
     alive.keepaliveinterval = interval * 1000;
     DWORD dwBytesRet = 0;
-    WSAIoctl(socketHandle, SIO_KEEPALIVE_VALS, &alive, sizeof(alive), NULL, 0, &dwBytesRet, NULL, NULL);
+    WSAIoctl(socketHandle, SIO_KEEPALIVE_VALS, &alive, sizeof(alive), nullptr, 0, &dwBytesRet, nullptr, nullptr);
 
 #else // For OSes other than Windows:
 
