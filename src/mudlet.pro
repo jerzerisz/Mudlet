@@ -40,10 +40,10 @@ lessThan(QT_MAJOR_VERSION, 5)|if(lessThan(QT_MAJOR_VERSION,6):lessThan(QT_MINOR_
 
 # Including Qssh Library
 include(../3rdparty/Qssh.pri)
+INCLUDEPATH += ../3rdparty/QSsh/src/libs/ssh
 QMAKE_CXXFLAGS_RELEASE += -fstack-protector
 QMAKE_CFLAGS_RELEASE += -fstack-protector
 QMAKE_LFLAGS += -fstack-protector
-
 
 
 # Including IRC Library
@@ -276,6 +276,7 @@ unix:!macx {
             -llua5.1 \
             -lhunspell
         INCLUDEPATH += /usr/include/lua5.1
+        INCLUDEPATH += /usr/include/botan-2
     }
     LIBS += -lpcre \
         -L/usr/local/lib/ \
@@ -306,7 +307,9 @@ unix:!macx {
     INCLUDEPATH += \
                    "C:\\Libraries\\boost_1_67_0" \
                    "$${MINGW_BASE_DIR}\\include" \
-                   "$${MINGW_BASE_DIR}\\lib\include"
+                   "$${MINGW_BASE_DIR}\\lib\include" \
+                   "$${MINGW_BASE_DIR}\\include\\botan-2"
+
 # Leave this undefined so mudlet::readSettings() preprocessing will fall back to
 # hard-coded executable's /mudlet-lua/lua/ subdirectory
 #    LUA_DEFAULT_DIR = $$clean_path($$system(echo %ProgramFiles%)/lua)
@@ -645,7 +648,7 @@ FORMS += \
     ui/trigger_pattern_edit.ui \
     ui/vars_main_area.ui
 
-RESOURCES = mudlet.qrc \
+RESOURCES += mudlet.qrc \
             ../translations/translated/qm.qrc
 
 contains(DEFINES, INCLUDE_FONTS) {
@@ -1365,8 +1368,3 @@ DISTFILES += \
     ../translations/translated/CMakeLists.txt \
     ../translations/translated/generate-translation-stats.lua
 
-
-INCLUDEPATH += ../3rdparty/ssh
-INCLUDEPATH +=$${MINGW_BASE_DIR}/include/botan-2
-INCLUDEPATH += /usr/include/botan-2
-LIBS += -lbotan-2

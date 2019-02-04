@@ -1,20 +1,12 @@
-TEMPLATE = lib
-TARGET = QSsh
-QT += network
-DEFINES += QSSH_LIBRARY CREATOR_SSH_DEBUG
+DEFINES += QTCSSH_LIBRARY
 
-#LIBS += -lbotan-2
+LIBS += -lbotan-2
 
 #Enable debug log
 #DEFINES += CREATOR_SSH_DEBUG
 
-#INCLUDEPATH += /usr/include/botan-2/
-#INCLUDEPATH += /include/botan-2/
 
-#INCLUDEPATH +="$${MINGW_BASE_DIR}/include/boan-2"
-
-
-SOURCES = $$PWD/QSsh/src/libs/ssh/sshsendfacility.cpp \
+SOURCES += $$PWD/QSsh/src/libs/ssh/sshsendfacility.cpp \
     $$PWD/QSsh/src/libs/ssh/sshremoteprocess.cpp \
     $$PWD/QSsh/src/libs/ssh/sshpacketparser.cpp \
     $$PWD/QSsh/src/libs/ssh/sshpacket.cpp \
@@ -47,7 +39,7 @@ SOURCES = $$PWD/QSsh/src/libs/ssh/sshsendfacility.cpp \
     $$PWD/QSsh/src/libs/ssh/sshagent.cpp
 
 
-HEADERS = $$PWD/QSsh/src/libs/ssh/sshsendfacility_p.h \
+HEADERS += $$PWD/QSsh/src/libs/ssh/sshsendfacility_p.h \
     $$PWD/QSsh/src/libs/ssh/sshremoteprocess.h \
     $$PWD/QSsh/src/libs/ssh/sshremoteprocess_p.h \
     $$PWD/QSsh/src/libs/ssh/sshpacketparser_p.h \
