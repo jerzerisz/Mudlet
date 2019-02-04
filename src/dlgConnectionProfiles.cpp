@@ -42,6 +42,20 @@ dlgConnectionProfiles::dlgConnectionProfiles(QWidget * parent)
 , validProfile()
 {
     setupUi(this);
+    
+    QPixmap holdPixmap;
+    
+    holdPixmap = *(this->notificationAreaIconLabelWarning->pixmap());
+    holdPixmap.setDevicePixelRatio(5.3);
+    this->notificationAreaIconLabelWarning->setPixmap(holdPixmap);
+    
+    holdPixmap = *(this->notificationAreaIconLabelError->pixmap());
+    holdPixmap.setDevicePixelRatio(5.3);
+    this->notificationAreaIconLabelError->setPixmap(holdPixmap);
+    
+    holdPixmap = *(this->notificationAreaIconLabelInformation->pixmap());
+    holdPixmap.setDevicePixelRatio(5.3);
+    this->notificationAreaIconLabelInformation->setPixmap(holdPixmap);
 
     // selection mode is important. if this is not set the selection behaviour is
     // undefined. this is an undocumented qt bug, as it only shows on certain OS
@@ -59,7 +73,7 @@ dlgConnectionProfiles::dlgConnectionProfiles(QWidget * parent)
     // settings suggest it:
     mudlet::self()->mShowIconsOnDialogs = !abort->icon().isNull();
 
-    auto Welcome_text_template = tr("<p><center><big><b>Welcome to Mudlet!</b><bold></center></p>"
+    auto Welcome_text_template = tr("<p><center><big><b>Welcome to Mudlet!</b></big></center></p>"
                                     "<p><center><b>Click on one of the games on the list to play.</b></center></p>"
                                     "<p>To play a game not in the list, click on %1 "
                                     "<span style=\" color:#555753;\">New</span>, fill in the <i>Profile Name</i>, "
@@ -311,7 +325,7 @@ void dlgConnectionProfiles::slot_update_discord_optin(int state)
     }
 }
 
-void dlgConnectionProfiles::slot_update_port(const QString ignoreBlank)
+void dlgConnectionProfiles::slot_update_port(const QString& ignoreBlank)
 {
     QString port = port_entry->text().trimmed();
 
@@ -539,7 +553,7 @@ void dlgConnectionProfiles::slot_addProfile()
 }
 
 // enables the deletion button once the correct text (profile name) is entered
-void dlgConnectionProfiles::slot_deleteprofile_check(const QString text)
+void dlgConnectionProfiles::slot_deleteprofile_check(const QString& text)
 {
     QString profile = profiles_tree_widget->currentItem()->text();
     if (profile != text) {
@@ -1759,13 +1773,15 @@ void dlgConnectionProfiles::slot_connectToServer()
     }
 
     if (needsGenericPackagesInstall) {
-        //install generic mapper script
+        //install appropriate mapper script for the game
         if (pHost->getUrl().contains(QStringLiteral("aetolia.com"), Qt::CaseInsensitive) || pHost->getUrl().contains(QStringLiteral("achaea.com"), Qt::CaseInsensitive)
             || pHost->getUrl().contains(QStringLiteral("lusternia.com"), Qt::CaseInsensitive)
             || pHost->getUrl().contains(QStringLiteral("imperian.com"), Qt::CaseInsensitive)) {
             mudlet::self()->packagesToInstallList.append(QStringLiteral(":/mudlet-mapper.xml"));
         } else if (pHost->getUrl().contains(QStringLiteral("3scapes.org"), Qt::CaseInsensitive) || pHost->getUrl().contains(QStringLiteral("3k.org"), Qt::CaseInsensitive)) {
             mudlet::self()->packagesToInstallList.append(QStringLiteral(":/3k-mapper.xml"));
+        } else {
+            mudlet::self()->packagesToInstallList.append(QStringLiteral(":/mudlet-lua/lua/generic-mapper/generic_mapper.xml"));
         }
 
         mudlet::self()->packagesToInstallList.append(QStringLiteral(":/deleteOldProfiles.xml"));
@@ -1932,7 +1948,7 @@ bool dlgConnectionProfiles::validateProfile()
 }
 
 // credit: http://www.qtcentre.org/archive/index.php/t-23469.html
-void dlgConnectionProfiles::copyFolder(QString sourceFolder, QString destFolder)
+void dlgConnectionProfiles::copyFolder(const QString& sourceFolder, const QString& destFolder)
 {
     QDir sourceDir(sourceFolder);
     if (!sourceDir.exists()) {

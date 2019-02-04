@@ -56,6 +56,20 @@ dlgProfilePreferences::dlgProfilePreferences(QWidget* pF, Host* pHost)
 {
     // init generated dialog
     setupUi(this);
+ 
+    QPixmap holdPixmap;
+
+    holdPixmap = *(this->notificationAreaIconLabelWarning->pixmap());
+    holdPixmap.setDevicePixelRatio(5.3);
+    this->notificationAreaIconLabelWarning->setPixmap(holdPixmap);
+
+    holdPixmap = *(this->notificationAreaIconLabelError->pixmap());
+    holdPixmap.setDevicePixelRatio(5.3);
+    this->notificationAreaIconLabelError->setPixmap(holdPixmap);
+
+    holdPixmap = *(this->notificationAreaIconLabelInformation->pixmap());
+    holdPixmap.setDevicePixelRatio(5.3);
+    this->notificationAreaIconLabelInformation->setPixmap(holdPixmap);
 
     // The groupBox_debug is no longer empty, (it contains
     // checkBox_showIconsOnMenus) so can no longer be "hidden until needed"
@@ -157,7 +171,7 @@ dlgProfilePreferences::dlgProfilePreferences(QWidget* pF, Host* pHost)
 
     // Set the tooltip on the containing widget so both the label and the
     // control have the same tool-tip:
-    widget_timerDebugOutputMinimumInterval->setToolTip(tr("<p>A timer will a short interval will quickly fill up the <i>Central Debug Console</i> "
+    widget_timerDebugOutputMinimumInterval->setToolTip(tr("<p>A timer with a short interval will quickly fill up the <i>Central Debug Console</i> "
                                                           "windows with messages that it ran correctly on <i>each</i> occasion it is called.  This (per profile) "
                                                           "control adjusts a threshold that will hide those messages in just that window for those timers which "
                                                           "run <b>correctly</b> when the timer's interval is less than this setting.</p>"
@@ -2120,7 +2134,7 @@ void dlgProfilePreferences::slot_save_and_exit()
     Host* pHost = mpHost;
     if (pHost) {
         if (dictList->currentItem()) {
-            pHost->mSpellDic = dictList->currentItem()->text();
+            pHost->setSpellDic(dictList->currentItem()->text());
         }
 
         pHost->mEnableSpellCheck = enableSpellCheck->isChecked();
@@ -2632,7 +2646,7 @@ void dlgProfilePreferences::slot_editor_tab_selected(int tabIndex)
 
     QNetworkReply* getReply = manager->get(request);
 
-    connect(getReply, static_cast<void (QNetworkReply::*)(QNetworkReply::NetworkError)>(&QNetworkReply::error), [=](QNetworkReply::NetworkError) {
+    connect(getReply, static_cast<void (QNetworkReply::*)(QNetworkReply::NetworkError)>(&QNetworkReply::error), this, [=](QNetworkReply::NetworkError) {
         theme_download_label->setText(tr("Could not update themes: %1").arg(getReply->errorString()));
         QTimer::singleShot(5000, theme_download_label, [label = theme_download_label] {
             label->hide();
@@ -2668,7 +2682,7 @@ void dlgProfilePreferences::slot_editor_tab_selected(int tabIndex)
                         // perform unzipping in a worker thread so as not to freeze the UI
                         auto future = QtConcurrent::run(mudlet::unzip, tempThemesArchive->fileName(), mudlet::getMudletPath(mudlet::mainDataItemPath, QStringLiteral("edbee/")), temporaryDir.path());
                         auto watcher = new QFutureWatcher<bool>;
-                        QObject::connect(watcher, &QFutureWatcher<bool>::finished, [=]() {
+                        QObject::connect(watcher, &QFutureWatcher<bool>::finished, this, [=]() {
                             if (future.result() == true) {
                                 populateThemesList();
                             }
