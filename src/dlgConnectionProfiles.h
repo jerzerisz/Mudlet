@@ -42,11 +42,11 @@ signals:
     void signal_establish_connection(QString profile_name, int historyVersion);
 
 public slots:
-    void slot_update_name(QString);
     void slot_save_name();
     void slot_update_url(const QString &);
     void slot_update_port(QString);
     void slot_update_SSL_TSL_port(int state);
+    void slot_update_SSH(int state);
     void slot_update_login(const QString &);
     void slot_update_pass(const QString &);
     void slot_update_website(const QString &);
@@ -72,9 +72,7 @@ private:
     void updateDiscordStatus();
     bool validateProfile();
 
-    bool validName;
-    bool validUrl;
-    bool validPort;
+    bool validProfile;
 
     QStringList mProfileList;
     QPalette mRegularPalette;

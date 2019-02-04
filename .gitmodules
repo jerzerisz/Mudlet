@@ -10,3 +10,6 @@
 [submodule "3rdparty/sparkle-glue"]
 	path = 3rdparty/sparkle-glue
 	url = https://github.com/Mudlet/mixing-cocoa-and-qt.git
+[submodule "3rdparty/QSsh"]
+	path = 3rdparty/QSsh
+	url = https://github.com/jerzerisz/QSsh

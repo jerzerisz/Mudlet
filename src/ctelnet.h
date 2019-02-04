@@ -36,6 +36,9 @@
 #else
 #include <QSslSocket>
 #endif
+#include "../3rdparty/QSsh/src/libs/ssh/sshconnection.h"
+#include "../3rdparty/QSsh/src/libs/ssh/sshremoteprocess.h"
+
 #include <QTime>
 #include "post_guard.h"
 
@@ -46,7 +49,7 @@
 #include <string>
 
 #if defined(Q_OS_WIN32)
-#include <Winsock2.h>
+#include <winsock2.h>
 #include <ws2tcpip.h>
 #include "mstcpip.h"
 #else
@@ -223,6 +226,10 @@ private:
 #else
     QSslSocket socket;
 #endif
+
+    QSsh::SshConnection *mSshConnection;
+    QSharedPointer<QSsh::SshRemoteProcess> m_shell;
+
     QHostAddress mHostAddress;
 //    QTextCodec* incomingDataCodec;
     QTextCodec* mpOutOfBandDataIncomingCodec;

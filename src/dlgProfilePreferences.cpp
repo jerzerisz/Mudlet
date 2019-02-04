@@ -717,11 +717,14 @@ void dlgProfilePreferences::initWithHost(Host* pHost)
     }
 
     timeEdit_timerDebugOutputMinimumInterval->setTime(pHost->mTimerDebugOutputSuppressionInterval);
+
     notificationArea->hide();
     notificationAreaIconLabelWarning->hide();
     notificationAreaIconLabelError->hide();
     notificationAreaIconLabelInformation->hide();
     notificationAreaMessageBox->hide();
+    notificationAreaMessageBox->setText(tr(""));
+    int errorIndex = 0;
 
 #if !defined(QT_NO_SSL)
     if (QSslSocket::supportsSsl() && pHost->mSslTsl == true) {
@@ -737,54 +740,81 @@ void dlgProfilePreferences::initWithHost(Host* pHost)
         checkBox_ssl->setStyleSheet("");
 
         if (!pHost->mTelnet.getSslErrors().empty()) {
-            // handle ssl errors
-            notificationAreaIconLabelWarning->show();
             notificationArea->show();
+            notificationAreaIconLabelWarning->show();
             notificationAreaMessageBox->show();
-            //notificationAreaMessageBox->setText(pHost->mTelnet.errorString());
 
             QList<QSslError> sslErrors = pHost->mTelnet.getSslErrors();
 
-            for (int a = 0; a < sslErrors.count(); a++) {
-                QString thisError = QStringLiteral("<li>%1</li>").arg(sslErrors.at(a).errorString());
-                notificationAreaMessageBox->setText(QStringLiteral("%1\n%2").arg(notificationAreaMessageBox->text(), thisError));
+            for (errorIndex = 0; errorIndex < sslErrors.count(); errorIndex++) {
+                QString thisError;
 
-                if (sslErrors.at(a).error() == QSslError::SelfSignedCertificate) {
-                    checkBox_self_signed->setStyleSheet(QStringLiteral("font-weight: bold; background: yellow"));
-                    ssl_issuer_label->setStyleSheet(QStringLiteral("font-weight: bold; color: red; background: yellow"));
+                if (sslErrors.at(errorIndex).error() == QSslError::SelfSignedCertificate) {
+                    if (pHost->mSslIgnoreSelfSigned || pHost->mSslIgnoreAll) {
+                        notificationAreaIconLabelInformation->show();
+                        thisError = tr("%1)\t%2 (ignored)").arg(QString::number(errorIndex + 1), sslErrors.at(errorIndex).errorString());
+                    } else {
+                        notificationAreaIconLabelError->show();
+                        thisError = QString("%1)\t%2").arg(QString::number(errorIndex + 1), sslErrors.at(errorIndex).errorString());
+                        checkBox_self_signed->setStyleSheet("font-weight: bold; background: yellow");
+                        ssl_issuer_label->setStyleSheet("font-weight: bold; color: red; background: yellow");
+                    }
+
+                } else if (sslErrors.at(errorIndex).error() == QSslError::CertificateExpired) {
+                    if (pHost->mSslIgnoreExpired || pHost->mSslIgnoreAll) {
+                        notificationAreaIconLabelInformation->show();
+                        thisError = tr("%1)\t%2 (ignored)").arg(QString::number(errorIndex + 1), sslErrors.at(errorIndex).errorString());
+                    } else {
+                        notificationAreaIconLabelError->show();
+                        thisError = QString("%1)\t%2").arg(QString::number(errorIndex + 1), sslErrors.at(errorIndex).errorString());
+                        checkBox_expired->setStyleSheet("font-weight: bold; background: yellow");
+                        ssl_expires_label->setStyleSheet("font-weight: bold; color: red; background: yellow");
+                    }
+                } else {
+                    if (pHost->mSslIgnoreAll) {
+                        notificationAreaIconLabelInformation->show();
+                        thisError = tr("%1)\t%2 (ignored)").arg(QString::number(errorIndex + 1), sslErrors.at(errorIndex).errorString());
+                    } else {
+                        notificationAreaIconLabelError->show();
+                        thisError = QString("%1)\t%2").arg(QString::number(errorIndex + 1), sslErrors.at(errorIndex).errorString());
+                    }
                 }
-                if (sslErrors.at(a).error() == QSslError::CertificateExpired) {
-                    checkBox_expired->setStyleSheet(QStringLiteral("font-weight: bold; background: yellow"));
-                    ssl_expires_label->setStyleSheet(QStringLiteral("font-weight: bold; color: red; background: yellow"));
-                }
+                notificationAreaMessageBox->setText(QString("%1\n%2").arg(notificationAreaMessageBox->text(), thisError));
             }
 
         } else if (pHost->mTelnet.error() == QAbstractSocket::SslHandshakeFailedError) {
             // handle failed handshake, likely not ssl socket
-            notificationAreaIconLabelError->show();
             notificationArea->show();
+            notificationAreaIconLabelError->show();
             notificationAreaMessageBox->show();
-            notificationAreaMessageBox->setText(pHost->mTelnet.errorString());
+            notificationAreaMessageBox->setText(tr("No secure connection available at %1:%2, try connecting normally.").arg(pHost->getUrl(), QString::number(pHost->getPort())));
             checkBox_ssl->setStyleSheet(QStringLiteral("font-weight: bold; background: yellow"));
-        }
-        if (pHost->mTelnet.error() == QAbstractSocket::SslInternalError) {
+        } else if (pHost->mTelnet.error() == QAbstractSocket::SslInternalError) {
             // handle ssl library error
-            notificationAreaIconLabelError->show();
             notificationArea->show();
+            notificationAreaIconLabelError->show();
             notificationAreaMessageBox->show();
             notificationAreaMessageBox->setText(pHost->mTelnet.errorString());
-        }
-        if (pHost->mTelnet.error() == QAbstractSocket::SslInvalidUserDataError) {
+        } else if (pHost->mTelnet.error() == QAbstractSocket::SslInvalidUserDataError) {
             // handle invalid data (certificate, key, cypher, etc.)
-            notificationAreaIconLabelError->show();
             notificationArea->show();
+            notificationAreaIconLabelError->show();
             notificationAreaMessageBox->show();
             notificationAreaMessageBox->setText(pHost->mTelnet.errorString());
+        } else {
+            notificationArea->hide();
+            notificationAreaIconLabelError->hide();
+            notificationAreaMessageBox->hide();
+            notificationAreaMessageBox->setText(QString());
         }
     }
 #endif
+    if (pHost->mSsh == true) {
+
+    }
 
     checkBox_ssl->setChecked(pHost->mSslTsl);
+    gridGroupBox_ssh->setChecked(pHost->mSsh);
     checkBox_self_signed->setChecked(pHost->mSslIgnoreSelfSigned);
     checkBox_expired->setChecked(pHost->mSslIgnoreExpired);
     checkBox_ignore_all->setChecked(pHost->mSslIgnoreAll);

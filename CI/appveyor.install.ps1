@@ -89,8 +89,12 @@ function DownloadFile([string] $url, [string] $outputFile, [bool] $bigDownload =
 function ExtractTar([string] $tarFile, [string] $outputPath) {
   Step "Extracting source distribution"
   $file = Get-ChildItem $tarFile
-  exec "7z" @("x", "$($file.FullName)", "-y")
-  exec "7z" @("-o$outputPath", "x", "$($file.Directory)\$($file.BaseName)", "-y")
+  try {
+    exec "7z" @("x", "$($file.FullName)", "-y")
+    exec "7z" @("-o$outputPath", "x", "$($file.Directory)\$($file.BaseName)", "-y")
+   } catch {
+
+   }
 }
 
 function ExtractZip([string] $zipFile, [string] $outputPath) {
@@ -302,7 +306,7 @@ function InstallLibzip() {
   }
   Set-Location build
   Step "running cmake"
-  exec "cmake" @("-G", "`"MinGW Makefiles`"", "-DCMAKE_INSTALL_PREFIX=`"$Env:MINGW_BASE_DIR`"", "-DENABLE_OPENSSL=OFF", "..")
+  exec "cmake" @("-G", "`"MinGW Makefiles`"", "-DCMAKE_INSTALL_PREFIX=`"$Env:MINGW_BASE_DIR`"", "..")
   RunMake
   RunMakeInstall
   $Env:Path = $ShPath
@@ -347,6 +351,18 @@ function InstallPugixml() {
   RunMake
   RunMakeInstall
   $Env:Path = $ShPath
+}
+
+function InstallBotan() {
+  $Env:Path = $NoShPath
+  DownloadFile "https://botan.randombit.net/releases/Botan-2.9.0.tgz" "Botan-2.9.0.tar.gz"
+  ExtractTar "Botan-2.9.0.tar.gz" "Botan-2.9.0"
+  Set-Location Botan-2.9.0\Botan-2.9.0
+  Step "Configure botan"
+  exec "python" @("./configure.py","--os=mingw", "--cpu=x86_32", "--cc=gcc", "--prefix=$Env:MINGW_BASE_DIR")
+  RunMake
+  RunMakeInstall
+#  $Env:Path = $ShPath
 }
 
 function InstallLuaModules(){
@@ -405,4 +421,5 @@ CheckAndInstall "libzip" "$Env:MINGW_BASE_DIR\include\zipconf.h" { InstallLibzip
 CheckAndInstall "zziplib" "$Env:MINGW_BASE_DIR\lib\libzzip.la" { InstallZziplib }
 CheckAndInstall "luarocks" "C:\LuaRocks\luarocks.bat" { InstallLuarocks }
 CheckAndInstall "pugixml" "$Env:MINGW_BASE_DIR\lib\libpugixml.a" { InstallPugixml }
-InstallLuaModules
+CheckAndInstall "botan" "$Env:MINGW_BASE_DIR\lib\libbotan-2.a" { InstallBotan }
+#InstallLuaModules

@@ -44,6 +44,8 @@
 #include <QTextEncoder>
 #include <QSslError>
 #include "post_guard.h"
+#include "../3rdparty/QSsh/src/libs/ssh/sshconnection.h"
+#include "../3rdparty/QSsh/src/libs/ssh/sshremoteprocess.h"
 
 #define DEBUG
 
@@ -123,21 +125,10 @@ cTelnet::cTelnet(Host* pH)
         mFriendlyEncodings << TBuffer::getFriendlyEncodingNames();
     }
 
-    // initialize the socket after the Host initialisation is complete so we can access mSslTsl
-    QTimer::singleShot(0, this, [this]() {
-        qDebug() << mpHost->getName();
-        if (mpHost->mSslTsl) {
-            connect(&socket, &QSslSocket::encrypted, this, &cTelnet::handle_socket_signal_connected);
-        } else {
-            connect(&socket, &QAbstractSocket::connected, this, &cTelnet::handle_socket_signal_connected);
-        }
-        connect(&socket, &QAbstractSocket::disconnected, this, &cTelnet::handle_socket_signal_disconnected);
-        connect(&socket, &QIODevice::readyRead, this, &cTelnet::handle_socket_signal_readyRead);
+    connect(&socket, &QAbstractSocket::disconnected, this, &cTelnet::handle_socket_signal_disconnected);
 #if !defined(QT_NO_SSL)
-        connect(&socket, qOverload<const QList<QSslError>&>(&QSslSocket::sslErrors), this, &cTelnet::handle_socket_signal_sslError);
+    connect(&socket, qOverload<const QList<QSslError>&>(&QSslSocket::sslErrors), this, &cTelnet::handle_socket_signal_sslError);
 #endif
-    });
-
 
     // initialize telnet session
     reset();
@@ -145,13 +136,15 @@ cTelnet::cTelnet(Host* pH)
     mpPostingTimer->setInterval(300); //FIXME
     connect(mpPostingTimer, &QTimer::timeout, this, &cTelnet::slot_timerPosting);
 
-    mTimerLogin = new QTimer(this);
-    mTimerLogin->setSingleShot(true);
-    connect(mTimerLogin, &QTimer::timeout, this, &cTelnet::slot_send_login);
+    if ((!mpHost->mSsh) && (true)) {
+        mTimerLogin = new QTimer(this);
+        mTimerLogin->setSingleShot(true);
+        connect(mTimerLogin, &QTimer::timeout, this, &cTelnet::slot_send_login);
 
-    mTimerPass = new QTimer(this);
-    mTimerPass->setSingleShot(true);
-    connect(mTimerPass, &QTimer::timeout, this, &cTelnet::slot_send_pass);
+        mTimerPass = new QTimer(this);
+        mTimerPass->setSingleShot(true);
+        connect(mTimerPass, &QTimer::timeout, this, &cTelnet::slot_send_pass);
+    }
 
     mpDownloader = new QNetworkAccessManager(this);
     connect(mpDownloader, &QNetworkAccessManager::finished, this, &cTelnet::replyFinished);
@@ -252,25 +245,43 @@ const QString& cTelnet::getComputerEncoding(const QString& encoding)
 }
 
 #if !defined(QT_NO_SSL)
+//TODO
 QSslCertificate cTelnet::getPeerCertificate()
 {
-    return socket.peerCertificate();
+    if (mpHost->mSsh) {
+
+    } else {
+        return socket.peerCertificate();
+    }
 }
 
+//TODO
 QList<QSslError> cTelnet::getSslErrors()
 {
-    return socket.sslErrors();
+    if (mpHost->mSsh) {
+    } else {
+        return socket.sslErrors();
+    }
 }
 #endif
 
+//TODO
 QAbstractSocket::SocketError cTelnet::error()
 {
-    return socket.error();
+    if (mpHost->mSsh) {
+        //return mSshConnection->e
+    } else {
+        return socket.error();
+    }
 }
 
 QString cTelnet::errorString()
 {
-    return socket.errorString();
+    if (mpHost->mSsh) {
+        return mSshConnection->errorString();
+    } else {
+        return socket.errorString();
+    }
 }
 
 // returns the human-friendly one ("ISO 8859-5 (Cyrillic)") given a computer encoding name ("ISO 8859-5")
@@ -345,59 +356,108 @@ void cTelnet::connectIt(const QString& address, int port)
         mFORCE_GA_OFF = mpHost->mFORCE_GA_OFF;
     }
 
-    if (socket.state() != QAbstractSocket::UnconnectedState) {
-        socket.abort();
-        connectIt(address, port);
-        return;
+    if (mpHost->mSsh) {
+
+        QSsh::SshConnectionParameters params;
+        params.setHost(address);
+        params.setUserName(mpHost->getLogin());
+        params.setPassword(mpHost->getPass());
+        params.authenticationType = QSsh::SshConnectionParameters::AuthenticationTypeTryAllPasswordBasedMethods;
+        params.timeout = 30;
+        params.setPort(port);
+        mSshConnection = new QSsh::SshConnection(params, nullptr);
+
+        connect(mSshConnection, &QSsh::SshConnection::connected, this, &cTelnet::handle_socket_signal_connected);
+        connect(mSshConnection, &QSsh::SshConnection::error, this, &cTelnet::handle_socket_signal_error);
+
+        //qDebug() << "SecureUploader: Connecting to host" << address;
+        postMessage(tr("[ INFO ]  - Trying SSH connection to %1: %2 ...\n").arg(address, QString::number(port)));
+        mSshConnection->connectToHost();
+
+    } else {
+        if (socket.state() != QAbstractSocket::UnconnectedState) {
+            socket.abort();
+            connectIt(address, port);
+            return;
+        }
+
+        connect(&socket, &QIODevice::readyRead, this, &cTelnet::handle_socket_signal_readyRead);
+        if (mpHost->mSslTsl) {
+            connect(&socket, &QSslSocket::encrypted, this, &cTelnet::handle_socket_signal_connected);
+        } else {
+            connect(&socket, &QAbstractSocket::connected, this, &cTelnet::handle_socket_signal_connected);
+        }
+
+        emit signal_connecting(mpHost);
+
+        hostName = address;
+        hostPort = port;
+        QString server = tr("[ INFO ]  - Looking up the IP address of server:") + address + ":" + QString::number(port) + " ...";
+        postMessage(server);
+        // don't use a compile-time slot for this: https://bugreports.qt.io/browse/QTBUG-67646
+        QHostInfo::lookupHost(address, this, SLOT(handle_socket_signal_hostFound(QHostInfo)));
     }
-
-    emit signal_connecting(mpHost);
-
-    hostName = address;
-    hostPort = port;
-    QString server = tr("[ INFO ]  - Looking up the IP address of server:") + address + ":" + QString::number(port) + " ...";
-    postMessage(server);
-    // don't use a compile-time slot for this: https://bugreports.qt.io/browse/QTBUG-67646
-    QHostInfo::lookupHost(address, this, SLOT(handle_socket_signal_hostFound(QHostInfo)));
 }
 
 
 void cTelnet::disconnect()
 {
     mDontReconnect = true;
-    socket.disconnectFromHost();
-
+    if (mpHost->mSsh) {
+        mSshConnection->disconnectFromHost();
+    } else {
+        socket.disconnectFromHost();
+    }
 }
 
 void cTelnet::handle_socket_signal_error()
 {
-    QString err = tr("[ ERROR ] - TCP/IP socket ERROR:") % socket.errorString();
-    postMessage(err);
+    if (mpHost->mSsh) {
+        postMessage(tr("[ ERROR ] - %1").arg(mSshConnection->errorString()));
+    } else {
+        postMessage(tr("[ ERROR ] - TCP/IP socket ERROR: %1").arg(socket.errorString()));
+    }
 }
 
 void cTelnet::slot_send_login()
 {
-    sendData(mpHost->getLogin());
+    if ((!mpHost->mSsh) && (true)) {
+        sendData(mpHost->getLogin());
+    }
 }
 
 void cTelnet::slot_send_pass()
 {
-    sendData(mpHost->getPass());
+    if ((!mpHost->mSsh) && (true)) {
+        sendData(mpHost->getPass());
+    }
 }
 
 void cTelnet::handle_socket_signal_connected()
 {
+    postMessage(tr("[ INFO ]  - connected...\n"));
     QString msg;
 
     reset();
-    setKeepAlive(socket.socketDescriptor());
 
-    if (mpHost->mSslTsl)
-    {
-        msg = tr("[ INFO ]  - A secure connection has been established successfully.");
+    if (mpHost->mSsh) {
+        msg = tr("[ INFO ]  - A SSH connection has been established successfully.");
+
+        m_shell = mSshConnection->createRemoteShell();
+        connect(mSshConnection, &QSsh::SshConnection::dataAvailable, this, &cTelnet::handle_socket_signal_readyRead);
+        connect(m_shell.data(), SIGNAL(readyReadStandardOutput()), SLOT(handle_socket_signal_readyRead()));
+        connect(m_shell.data(), SIGNAL(readyReadStandardError()), SLOT(handle_socket_signal_readyRead()));
+        m_shell->start();
+
     } else {
-        msg = tr("[ INFO ]  - A connection has been established successfully.");
+        setKeepAlive(socket.socketDescriptor());
+        if (mpHost->mSslTsl) {
+            msg = tr("[ INFO ]  - A secure connection has been established successfully.");
+        } else {
+            msg = tr("[ INFO ]  - A connection has been established successfully.");
+        }
     }
+
     msg.append(QStringLiteral("\n    \n    "));
     postMessage(msg);
     QString func = "onConnect";
@@ -440,43 +500,46 @@ void cTelnet::handle_socket_signal_disconnected()
 
     if (!mpHost->mIsGoingDown) {
         postMessage(spacer);
-
+        if (mpHost->mSsh) {
+        } else {
 #if !defined(QT_NO_SSL)
 
-        QList<QSslError> sslErrors = getSslErrors();
-        QSslCertificate cert = socket.peerCertificate();
+            QList<QSslError> sslErrors = getSslErrors();
+            QSslCertificate cert = socket.peerCertificate();
 
-        if (mpHost->mSslIgnoreExpired) {
-            sslErrors.removeAll(QSslError(QSslError::CertificateExpired, cert));
-        }
-
-        if (mpHost->mSslIgnoreSelfSigned) {
-            sslErrors.removeAll(QSslError(QSslError::SelfSignedCertificate, cert));
-        }
-
-        sslerr = (sslErrors.count() > 0 && !mpHost->mSslIgnoreAll && mpHost->mSslTsl);
-
-        if (sslerr) {
-            mDontReconnect = true;
-
-            for (int a = 0; a < sslErrors.count(); a++) {
-                reason.append(QStringLiteral("        %1\n").arg(QString(sslErrors.at(a).errorString())));
+            if (mpHost->mSslIgnoreExpired) {
+                sslErrors.removeAll(QSslError(QSslError::CertificateExpired, cert));
             }
-            QString err = "[ ALERT ] - Socket got disconnected.\nReason: \n" % reason;
-            postMessage(err);
-        } else
+
+            if (mpHost->mSslIgnoreSelfSigned) {
+                sslErrors.removeAll(QSslError(QSslError::SelfSignedCertificate, cert));
+            }
+
+            sslerr = (sslErrors.count() > 0 && !mpHost->mSslIgnoreAll && mpHost->mSslTsl);
+
+            if (sslerr) {
+                mDontReconnect = true;
+
+                //todo
+                for (int a = 0; a < sslErrors.count(); a++) {
+                    reason.append(QStringLiteral("        %1\n").arg(QString(sslErrors.at(a).errorString())));
+                }
+                QString err = tr("[ ALERT ] - Socket got disconnected.\nReason: %1\n").arg(reason);
+                postMessage(err);
+            } else
 #endif
-        {
-            if (mDontReconnect) {
-                reason = QStringLiteral("User Disconnected");
-            } else {
-                reason = socket.errorString();
+            {
+                if (mDontReconnect) {
+                    reason = tr("User Disconnected");
+                } else {
+                    reason = socket.errorString();
+                }
+                if (socket.error() == QAbstractSocket::SslHandshakeFailedError) {
+                    reason = tr("Secure connections aren't supported by this game on this port - try turning the option off.");
+                }
+                QString err = tr("[ ALERT ] - Socket got disconnected.\nReason: %1").arg(reason);
+                postMessage(err);
             }
-            if (reason == QStringLiteral("Error during SSL handshake: error:140770FC:SSL routines:SSL23_GET_SERVER_HELLO:unknown protocol")) {
-                reason = tr("Secure connections aren't supported by this game on this port - try turning the option off.");
-            }
-            QString err = "[ ALERT ] - Socket got disconnected.\nReason: " % reason;
-            postMessage(err);
         }
         postMessage(msg);
     }
@@ -611,19 +674,26 @@ bool cTelnet::socketOutRaw(string& data)
     // We were using socket.iswritable() but it was not clear that that was a
     // suitable way to check for an open, usable connection - whereas isvalid()
     // is true if the socket is valid and ready for use:
-    if (!socket.isValid()) {
-        return false;
+    if (mpHost->mSsh) {
+    } else {
+        if (!socket.isValid()) {
+            return false;
+        }
     }
     std::size_t dataLength = data.length();
     std::size_t written = 0;
 
     do {
+        unsigned long chunkWritten;
         // Must use the two-argument QAbstractSocket::write(...) because there
         // may be ASCII NUL characters in data and the first of those will
         // terminate the writing of the bytes following it in the single
         // argument method call:
-        qint64 chunkWritten = socket.write(data.substr(written).data(), (dataLength - written));
-
+        if (mpHost->mSsh) {
+            chunkWritten = m_shell->write(data.substr(written).data(), (dataLength - written));
+        } else {
+            chunkWritten = socket.write(data.substr(written).data(), (dataLength - written));
+        }
         if (chunkWritten < 0) {
             // -1 is the sentinel (error) value but any other negative value
             // would not make sense and it would break the cast to the
@@ -2057,6 +2127,12 @@ void cTelnet::slot_processReplayChunk()
 
 void cTelnet::handle_socket_signal_readyRead()
 {
+    char in_bufferx[100010];
+    char* in_buffer = in_bufferx;
+    char out_buffer[100010];
+    int amount = 0;
+
+
     mpHost->mInsertedMissingLF = false;
 
     if (mWaitingForResponse) {
@@ -2065,12 +2141,13 @@ void cTelnet::handle_socket_signal_readyRead()
         mWaitingForResponse = false;
     }
 
-    char in_bufferx[100010];
-    char* in_buffer = in_bufferx;
-    char out_buffer[100010];
-
-    int amount = socket.read(in_buffer, 100000);
+    if (mpHost->mSsh) {
+        amount = int(m_shell->read(in_buffer, 100000));
+    } else {
+        amount = int(socket.read(in_buffer, 100000));
+    }
     in_buffer[amount + 1] = '\0';
+
     if (amount == -1) {
         return;
     }

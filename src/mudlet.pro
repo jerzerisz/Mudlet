@@ -38,6 +38,14 @@ lessThan(QT_MAJOR_VERSION, 5)|if(lessThan(QT_MAJOR_VERSION,6):lessThan(QT_MINOR_
     error("Mudlet requires Qt 5.7 or later")
 }
 
+# Including Qssh Library
+include(../3rdparty/Qssh.pri)
+QMAKE_CXXFLAGS_RELEASE += -fstack-protector
+QMAKE_CFLAGS_RELEASE += -fstack-protector
+QMAKE_LFLAGS += -fstack-protector
+
+
+
 # Including IRC Library
 include(../3rdparty/communi/communi.pri)
 
@@ -1356,3 +1364,9 @@ DISTFILES += \
     ../README.md \
     ../translations/translated/CMakeLists.txt \
     ../translations/translated/generate-translation-stats.lua
+
+
+INCLUDEPATH += ../3rdparty/ssh
+INCLUDEPATH +=$${MINGW_BASE_DIR}/include/botan-2
+INCLUDEPATH += /usr/include/botan-2
+LIBS += -lbotan-2

@@ -242,6 +242,7 @@ public:
     bool mInsertedMissingLF;
 
     bool mSslTsl;
+    bool mSsh;
     bool mAutoReconnect;
     bool mSslIgnoreExpired;
     bool mSslIgnoreSelfSigned;

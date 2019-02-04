@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>760</width>
-    <height>671</height>
+    <height>702</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -81,13 +81,13 @@
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_3">
          <property name="spacing">
-          <number>0</number>
+          <number>9</number>
          </property>
          <property name="topMargin">
-          <number>0</number>
+          <number>9</number>
          </property>
          <property name="bottomMargin">
-          <number>0</number>
+          <number>9</number>
          </property>
          <item>
           <widget class="QListWidget" name="profiles_tree_widget">
@@ -2208,26 +2208,6 @@
             <string>Required</string>
            </property>
            <layout class="QGridLayout" name="gridLayout">
-            <item row="0" column="0">
-             <widget class="QLabel" name="label_profileName">
-              <property name="text">
-               <string>Profile name:</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="1" colspan="2">
-             <widget class="QLineEdit" name="profile_name_entry">
-              <property name="font">
-               <font>
-                <family>Bitstream Charter</family>
-                <pointsize>9</pointsize>
-               </font>
-              </property>
-              <property name="readOnly">
-               <bool>false</bool>
-              </property>
-             </widget>
-            </item>
             <item row="1" column="0">
              <widget class="QLabel" name="label_serverUrl">
               <property name="text">
@@ -2235,19 +2215,20 @@
               </property>
              </widget>
             </item>
-            <item row="1" column="1" colspan="2">
-             <widget class="QLineEdit" name="host_name_entry">
-              <property name="minimumSize">
-               <size>
-                <width>100</width>
-                <height>0</height>
-               </size>
+            <item row="2" column="2">
+             <widget class="QCheckBox" name="port_ssl_tsl">
+              <property name="layoutDirection">
+               <enum>Qt::RightToLeft</enum>
               </property>
-              <property name="font">
-               <font>
-                <family>Bitstream Charter</family>
-                <pointsize>9</pointsize>
-               </font>
+              <property name="text">
+               <string>Secure:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="0">
+             <widget class="QLabel" name="label_profileHistory">
+              <property name="text">
+               <string>Profile history:</string>
               </property>
              </widget>
             </item>
@@ -2255,6 +2236,13 @@
              <widget class="QLabel" name="label_port">
               <property name="text">
                <string>Port:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_profileName">
+              <property name="text">
+               <string>Profile name:</string>
               </property>
              </widget>
             </item>
@@ -2292,24 +2280,46 @@
               </property>
              </widget>
             </item>
-            <item row="2" column="2">
-             <widget class="QCheckBox" name="port_ssl_tsl">
+            <item row="2" column="3">
+             <widget class="QCheckBox" name="port_ssh">
               <property name="layoutDirection">
                <enum>Qt::RightToLeft</enum>
               </property>
               <property name="text">
-               <string>Secure:</string>
+               <string>SSH:</string>
               </property>
              </widget>
             </item>
-            <item row="3" column="0">
-             <widget class="QLabel" name="label_profileHistory">
-              <property name="text">
-               <string>Profile history:</string>
+            <item row="0" column="1" colspan="3">
+             <widget class="QLineEdit" name="profile_name_entry">
+              <property name="font">
+               <font>
+                <family>Bitstream Charter</family>
+                <pointsize>9</pointsize>
+               </font>
+              </property>
+              <property name="readOnly">
+               <bool>false</bool>
               </property>
              </widget>
             </item>
-            <item row="3" column="1" colspan="2">
+            <item row="1" column="1" colspan="3">
+             <widget class="QLineEdit" name="host_name_entry">
+              <property name="minimumSize">
+               <size>
+                <width>100</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="font">
+               <font>
+                <family>Bitstream Charter</family>
+                <pointsize>9</pointsize>
+               </font>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="1" colspan="3">
              <widget class="QComboBox" name="profile_history">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -2533,11 +2543,11 @@
               <property name="toolTip">
                <string>Game description</string>
               </property>
-              <property name="readOnly">
-               <bool>false</bool>
-              </property>
               <property name="tabChangesFocus">
                <bool>true</bool>
+              </property>
+              <property name="readOnly">
+               <bool>false</bool>
               </property>
              </widget>
             </item>
@@ -2603,8 +2613,23 @@
   </layout>
  </widget>
  <tabstops>
-  <tabstop>dialog_buttonbox</tabstop>
+  <tabstop>profiles_tree_widget</tabstop>
+  <tabstop>welcome_message</tabstop>
+  <tabstop>profile_name_entry</tabstop>
+  <tabstop>host_name_entry</tabstop>
+  <tabstop>port_entry</tabstop>
+  <tabstop>port_ssl_tsl</tabstop>
+  <tabstop>port_ssh</tabstop>
+  <tabstop>profile_history</tabstop>
+  <tabstop>login_entry</tabstop>
+  <tabstop>character_password_entry</tabstop>
+  <tabstop>discord_optin_checkBox</tabstop>
+  <tabstop>autologin_checkBox</tabstop>
+  <tabstop>auto_reconnect</tabstop>
+  <tabstop>mud_description_textedit</tabstop>
   <tabstop>remove_profile_button</tabstop>
+  <tabstop>copy_profile_button</tabstop>
+  <tabstop>new_profile_button</tabstop>
  </tabstops>
  <resources>
   <include location="../mudlet.qrc"/>

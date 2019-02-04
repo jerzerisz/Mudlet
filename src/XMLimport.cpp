@@ -883,6 +883,7 @@ void XMLimport::readHostPackage(Host* pHost)
         pHost->mDoubleClickIgnore.insert(character);
     }
     pHost->mSslTsl = (attributes().value("mSslTsl") == "yes");
+    pHost->mSsh = (attributes().value("mSsh") == "yes");
     pHost->mAutoReconnect = (attributes().value("mAutoReconnect") == "yes");
     pHost->mSslIgnoreExpired = (attributes().value("mSslIgnoreExpired") == "yes");
     pHost->mSslIgnoreSelfSigned = (attributes().value("mSslIgnoreSelfSigned") == "yes");
