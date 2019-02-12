@@ -172,6 +172,7 @@ Host::Host(int port, const QString& hostname, const QString& login, const QStrin
 , mWideAmbigousWidthGlyphs(false)
 , mSGRCodeHasColSpaceId(false)
 , mServerMayRedefineColors(false)
+, mSsh(false)
 {
     // mLogStatus = mudlet::self()->mAutolog;
     mLuaInterface.reset(new LuaInterface(this));

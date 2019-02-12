@@ -420,7 +420,9 @@ void cTelnet::disconnect()
 {
     mDontReconnect = true;
     if (mpHost->mSsh) {
-        mSshConnection->disconnectFromHost();
+        if (mSshConnection->state() != QSsh::SshConnection::Unconnected) {
+            mSshConnection->disconnectFromHost();
+        }
     } else {
         socket.disconnectFromHost();
     }
