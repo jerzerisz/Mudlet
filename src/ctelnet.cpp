@@ -251,6 +251,15 @@ const QString& cTelnet::getComputerEncoding(const QString& encoding)
     return TBuffer::getComputerEncoding(encoding);
 }
 
+QString cTelnet::sshHostKey()
+{
+    if (mpHost->mSsh) {
+        return mSshConnection->hostKeyFingerprint();
+    } else {
+        return QString("");
+    }
+}
+
 #if !defined(QT_NO_SSL)
 //TODO
 QSslCertificate cTelnet::getPeerCertificate()

@@ -167,17 +167,6 @@ dlgConnectionProfiles::dlgConnectionProfiles(QWidget * parent)
     notificationAreaIconLabelInformation->hide();
     notificationAreaMessageBox->hide();
 
-     QPixmap holdPixmap;
-     holdPixmap = *(this->notificationAreaIconLabelWarning->pixmap());
-     holdPixmap.setDevicePixelRatio(5.3);
-     this->notificationAreaIconLabelWarning->setPixmap(holdPixmap);
-     holdPixmap = *(this->notificationAreaIconLabelError->pixmap());
-     holdPixmap.setDevicePixelRatio(5.3);
-     this->notificationAreaIconLabelError->setPixmap(holdPixmap);
-     holdPixmap = *(this->notificationAreaIconLabelInformation->pixmap());
-     holdPixmap.setDevicePixelRatio(5.3);
-     this->notificationAreaIconLabelInformation->setPixmap(holdPixmap);
-
 #if !defined(QT_NO_SSL)
     if (QSslSocket::supportsSsl()) {
         port_ssl_tsl->setEnabled(true);

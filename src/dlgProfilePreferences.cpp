@@ -732,6 +732,8 @@ void dlgProfilePreferences::initWithHost(Host* pHost)
 
     timeEdit_timerDebugOutputMinimumInterval->setTime(pHost->mTimerDebugOutputSuppressionInterval);
 
+    label_sshKey->setText(pHost->mTelnet.sshHostKey());
+
     notificationArea->hide();
     notificationAreaIconLabelWarning->hide();
     notificationAreaIconLabelError->hide();
