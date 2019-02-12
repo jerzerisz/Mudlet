@@ -347,7 +347,7 @@ QPair<bool, QString> cTelnet::setEncoding(const QString& newEncoding, const bool
 void cTelnet::requestDiscordInfo()
 {
     mudlet* pMudlet = mudlet::self();
-    if (pMudlet->mDiscord.libraryLoaded() && !mpHost->mDiscordDisableServerSide) {
+    if (pMudlet->mDiscord.libraryLoaded()) {
         string data;
         data = TN_IAC;
         data += TN_SB;
@@ -1071,7 +1071,7 @@ void cTelnet::processTelnetCommand(const string& command)
             output += TN_SE;
             socketOutRaw(output);
 
-            if (mudlet::self()->mDiscord.libraryLoaded() && !mpHost->mDiscordDisableServerSide) {
+            if (mudlet::self()->mDiscord.libraryLoaded()) {
                 output = TN_IAC;
                 output += TN_SB;
                 output += OPT_GMCP;
@@ -2250,8 +2250,6 @@ void cTelnet::handle_socket_signal_readyRead()
     int amount = 0;
 
 
-    mpHost->mInsertedMissingLF = false;
-
     if (mWaitingForResponse) {
         double time = networkLatencyTime.elapsed();
         networkLatency = time / 1000;
@@ -2263,6 +2261,15 @@ void cTelnet::handle_socket_signal_readyRead()
     } else {
         amount = int(socket.read(in_buffer, 100000));
     }
+    processSocketData(in_buffer, amount);
+}
+
+void cTelnet::processSocketData(char* in_buffer, int amount)
+{
+    mpHost->mInsertedMissingLF = false;
+
+    char out_buffer[100010];
+
     in_buffer[amount + 1] = '\0';
 
     if (amount == -1) {

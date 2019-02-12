@@ -743,7 +743,7 @@ void dlgProfilePreferences::initWithHost(Host* pHost)
     int errorIndex = 0;
 
 #if !defined(QT_NO_SSL)
-    if (QSslSocket::supportsSsl() && pHost->mSslTsl == true) {
+    if (QSslSocket::supportsSsl() && pHost->mSslTsl) {
         QSslCertificate cert = pHost->mTelnet.getPeerCertificate();
         ssl_issuer_label->setText(cert.issuerInfo(QSslCertificate::CommonName).join(","));
         ssl_issued_label->setText(cert.subjectInfo(QSslCertificate::CommonName).join(","));
@@ -2685,7 +2685,7 @@ void dlgProfilePreferences::slot_editor_tab_selected(int tabIndex)
                         auto future = QtConcurrent::run(mudlet::unzip, tempThemesArchive->fileName(), mudlet::getMudletPath(mudlet::mainDataItemPath, QStringLiteral("edbee/")), temporaryDir.path());
                         auto watcher = new QFutureWatcher<bool>;
                         QObject::connect(watcher, &QFutureWatcher<bool>::finished, this, [=]() {
-                            if (future.result() == true) {
+                            if (future.result()) {
                                 populateThemesList();
                             }
 
@@ -2708,7 +2708,7 @@ void dlgProfilePreferences::populateThemesList()
 
     if (themesFile.open(QIODevice::ReadOnly)) {
         unsortedThemes = QJsonDocument::fromJson(themesFile.readAll()).array();
-        for (auto theme : unsortedThemes) {
+        for (auto theme : qAsConst(unsortedThemes)) {
             QString themeText = theme.toObject()["Title"].toString();
             QString themeFileName = theme.toObject()["FileName"].toString();
 
@@ -2727,7 +2727,7 @@ void dlgProfilePreferences::populateThemesList()
 
     auto currentSelection = code_editor_theme_selection_combobox->currentText();
     code_editor_theme_selection_combobox->clear();
-    for (auto key : sortedThemes) {
+    for (auto key : qAsConst(sortedThemes)) {
         // store the actual theme file as data because edbee needs that,
         // not the name, for choosing the theme even after the theme file was loaded
         code_editor_theme_selection_combobox->addItem(key.first, key.second);

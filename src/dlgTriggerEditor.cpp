@@ -788,7 +788,7 @@ void dlgTriggerEditor::slot_item_selected_search_list(QTreeWidgetItem* pItem)
         // of this method!
         int idSearch = pItem->data(0, IdRole).toInt();
 
-        for (auto treeWidgetItem : foundItemsList) {
+        for (auto treeWidgetItem : qAsConst(foundItemsList)) {
 
             if (treeWidgetItem->data(0, IdRole).toInt() == idSearch) {
                 slot_show_triggers();
@@ -843,7 +843,7 @@ void dlgTriggerEditor::slot_item_selected_search_list(QTreeWidgetItem* pItem)
 
         int idSearch = pItem->data(0, IdRole).toInt();
 
-        for (auto treeWidgetItem : foundItemsList) {
+        for (auto treeWidgetItem : qAsConst(foundItemsList)) {
 
             if (treeWidgetItem->data(0, IdRole).toInt() == idSearch) {
                 slot_show_aliases();
@@ -892,7 +892,7 @@ void dlgTriggerEditor::slot_item_selected_search_list(QTreeWidgetItem* pItem)
 
         int idSearch = pItem->data(0, IdRole).toInt();
 
-        for (auto treeWidgetItem : foundItemsList) {
+        for (auto treeWidgetItem : qAsConst(foundItemsList)) {
 
             if (treeWidgetItem->data(0, IdRole).toInt() == idSearch) {
                 slot_show_scripts();
@@ -945,7 +945,7 @@ void dlgTriggerEditor::slot_item_selected_search_list(QTreeWidgetItem* pItem)
 
         int idSearch = pItem->data(0, IdRole).toInt();
 
-        for (auto treeWidgetitem : foundItemsList) {
+        for (auto treeWidgetitem : qAsConst(foundItemsList)) {
 
             if (treeWidgetitem->data(0, IdRole).toInt() == idSearch) {
                 slot_show_actions();
@@ -1011,7 +1011,7 @@ void dlgTriggerEditor::slot_item_selected_search_list(QTreeWidgetItem* pItem)
 
         int idSearch = pItem->data(0, IdRole).toInt();
 
-        for (auto treeWidgetItem : foundItemsList) {
+        for (auto treeWidgetItem : qAsConst(foundItemsList)) {
 
             if (treeWidgetItem->data(0, IdRole).toInt() == idSearch) {
                 slot_show_timers();
@@ -1054,7 +1054,7 @@ void dlgTriggerEditor::slot_item_selected_search_list(QTreeWidgetItem* pItem)
     case static_cast<int>(EditorViewType::cmKeysView): {
         foundItemsList = treeWidget_keys->findItems(pItem->data(0, NameRole).toString(), Qt::MatchCaseSensitive | Qt::MatchFixedString| Qt::MatchRecursive, 0);
 
-        for (auto treeWidgetItem : foundItemsList) {
+        for (auto treeWidgetItem : qAsConst(foundItemsList)) {
             int idTree = treeWidgetItem->data(0, IdRole).toInt();
             int idSearch = pItem->data(0, IdRole).toInt();
             if (idTree == idSearch) {
@@ -6957,25 +6957,27 @@ void dlgTriggerEditor::slot_script_main_area_delete_handler()
 
 void dlgTriggerEditor::slot_script_main_area_add_handler()
 {
+    auto addEventHandler = [&] () {
+        auto pItem = new QListWidgetItem;
+        pItem->setText(mpScriptsMainArea->lineEdit_script_event_handler_entry->text());
+        mpScriptsMainArea->listWidget_script_registered_event_handlers->addItem(pItem);
+    };
+
     mpScriptsMainArea->trimEventHandlerName();
     if (mIsScriptsMainAreaEditHandler) {
         if (!mpScriptsMainAreaEditHandlerItem) {
             mIsScriptsMainAreaEditHandler = false;
-            goto LAZY;
-            return;
+            addEventHandler();
+        } else {
+            QListWidgetItem* pItem = mpScriptsMainArea->listWidget_script_registered_event_handlers->currentItem();
+            if (!pItem) {
+                addEventHandler();
+            }
         }
-        QListWidgetItem* pItem = mpScriptsMainArea->listWidget_script_registered_event_handlers->currentItem();
-        if (!pItem) {
-            return;
-        }
-        pItem->setText(mpScriptsMainArea->lineEdit_script_event_handler_entry->text());
         mIsScriptsMainAreaEditHandler = false;
         mpScriptsMainAreaEditHandlerItem = nullptr;
     } else {
-    LAZY:
-        auto pItem = new QListWidgetItem;
-        pItem->setText(mpScriptsMainArea->lineEdit_script_event_handler_entry->text());
-        mpScriptsMainArea->listWidget_script_registered_event_handlers->addItem(pItem);
+        addEventHandler();
     }
     mpScriptsMainArea->lineEdit_script_event_handler_entry->clear();
 }
@@ -7670,7 +7672,7 @@ void dlgTriggerEditor::slot_profileSaveAction()
 {
     std::tuple<bool, QString, QString> result = mpHost->saveProfile(nullptr, nullptr, true);
 
-    if (std::get<0>(result) == false) {
+    if (!std::get<0>(result)) {
         QMessageBox::critical(this, tr("Couldn't save profile"), tr("Sorry, couldn't save your profile - got the following error: %1").arg(std::get<2>(result)));
     }
 }
